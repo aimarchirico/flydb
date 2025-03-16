@@ -1,7 +1,8 @@
 import sqlite3
 
-#finner ruter for en bestemt flyplass, ukedag og retning (avganger/ankomster)
-def airport_route_finder(db_name="flyselskap.db"):
+# Finner ruter for en bestemt flyplass, ukedag og retning (avganger/ankomster)
+def airport_route_finder(db_name):
+    output_file = "usecase6_output.txt"
     
     conn = sqlite3.connect(db_name)
     conn.row_factory = sqlite3.Row  
@@ -15,8 +16,8 @@ def airport_route_finder(db_name="flyselskap.db"):
             print("Ingen flyplasser funnet i databasen.")
             return
         
-        # viser flyplasser
-        print("\n=== Tilgjengelige Flyplasser ===")
+        # Viser flyplasser
+        print("\n=== Velg flyplass ===")
         for i, airport in enumerate(airports, 1):
             print(f"{i}. {airport['FlyplassKode']} - {airport['Navn']}")
         
@@ -41,7 +42,7 @@ def airport_route_finder(db_name="flyselskap.db"):
             7: "Søndag"
         }
         
-        print("\n=== Velg Ukedag ===")
+        print("\n=== Velg ukedag ===")
         for day_num, day_name in weekdays.items():
             print(f"{day_num}. {day_name}")
         
@@ -57,7 +58,7 @@ def airport_route_finder(db_name="flyselskap.db"):
                 print("Skriv inn et tall mellom 1 og 7.")
         
         
-        print("\n=== Velg Retning ===")
+        print("\n=== Velg retning ===")
         print("1. Avganger")
         print("2. Ankomster")
         
@@ -72,22 +73,19 @@ def airport_route_finder(db_name="flyselskap.db"):
             except ValueError:
                 print("Skriv inn et tall (1 eller 2).")
         
-        # Bygger spørringen vi leaft joiner for og beholde alle som har sekvensnummer større enn eller lik sekvensnummeret til avgangen
+        # Finner alle segmenter for ruten med større sekvensnummer enn segmentet som
+        # inneholder valgt avgang for å finne flyplasser i ruten som skal besøkes etter avgang
         if is_departure:
             query = """
                 SELECT 
                     fr.FlyruteNr,
                     rs.PlanlagtAvgangsTid,
                     rs.AvgangFra,
-                    GROUP_CONCAT(rs_path.AnkomstTil, ' → ') AS Destinasjoner,
-                    fs.Navn AS Flyselskap,
-                    fr.FlysMed AS Flytype
+                    GROUP_CONCAT(rs_path.AnkomstTil, ' → ') AS Destinasjoner
                 FROM 
                     Flyrute fr
                 JOIN 
                     Rutesegment rs ON fr.FlyruteNr = rs.FlyruteNr AND rs.AvgangFra = ?
-                JOIN
-                    Flyselskap fs ON fr.FlysAv = fs.FlyselskapsKode
                 LEFT JOIN
                     (SELECT rs2.FlyruteNr, rs2.AnkomstTil, rs2.SekvensNr
                      FROM Rutesegment rs2) rs_path
@@ -101,21 +99,20 @@ def airport_route_finder(db_name="flyselskap.db"):
                     rs.PlanlagtAvgangsTid
             """
             params = (selected_airport, selected_airport, selected_day)
+        
+        # Finner alle segmenter for ruten med mindre sekvensnummer enn segmentet som
+        # inneholder valgt ankomst for å finne flyplasser i ruten som skal besøkes før ankomst
         else:
             query = """
                 SELECT 
                     fr.FlyruteNr,
                     rs.PlanlagtAnkomstTid,
                     rs.AnkomstTil,
-                    GROUP_CONCAT(rs_path.AvgangFra, ' → ') AS Opprinnelser,
-                    fs.Navn AS Flyselskap,
-                    fr.FlysMed AS Flytype
+                    GROUP_CONCAT(rs_path.AvgangFra, ' → ') AS Opprinnelser
                 FROM 
                     Flyrute fr
                 JOIN 
                     Rutesegment rs ON fr.FlyruteNr = rs.FlyruteNr AND rs.AnkomstTil = ?
-                JOIN
-                    Flyselskap fs ON fr.FlysAv = fs.FlyselskapsKode
                 LEFT JOIN
                     (SELECT rs2.FlyruteNr, rs2.AvgangFra, rs2.SekvensNr
                      FROM Rutesegment rs2) rs_path
@@ -135,41 +132,70 @@ def airport_route_finder(db_name="flyselskap.db"):
         routes = cur.fetchall()
         
         
-        #fomatering av resultatet
-        
+        #Formater resultatet
         airport_name = [a['Navn'] for a in airports if a['FlyplassKode'] == selected_airport][0]
         direction_text = "Avganger fra" if is_departure else "Ankomster til"
         weekday_name = weekdays[int(selected_day)]
         
-        print(f"\n=== {direction_text} {airport_name} ({selected_airport}) på {weekday_name} ===\n")
+        output_lines = []
+        output_lines.append(f"\n=== {direction_text} {airport_name} ({selected_airport}) på {weekday_name} ===\n")
         
         if not routes:
-            print(f"Ingen flyruter funnet for {airport_name} på {weekday_name}.")
+            no_routes_msg = f"Ingen flyruter funnet for {airport_name} på {weekday_name}."
+            output_lines.append(no_routes_msg)
+            print(no_routes_msg)
+            with open(output_file, "w", encoding="utf-8") as f:
+                f.write("\n".join(output_lines))
+            print(f"\nResultatet er også skrevet til {output_file}")
             return
         
+        # Formatering dersom avgang
         if is_departure:
-            print(f"{'Flyrute':<8} {'Tid':<6} {'Fra':<5} {'Til':<5} {'Mellomlandinger':<20} {'Flyselskap':<15} {'Flytype':<15}")
-            print("-" * 90)
+            header = f"{'Flyrute':<8} {'Tid':<6} {'Fra':<5} {'Til':<5} {'Mellomlandinger':<20}"
+            separator = "-" * 60
+            output_lines.append(header)
+            output_lines.append(separator)
+            
             for route in routes:
                 destinations = route['Destinasjoner'].split(' → ') if route['Destinasjoner'] else []
                 final_destination = destinations[-1] if destinations else ""
                 intermediate = destinations[:-1] if len(destinations) > 1 else []
                 intermediate_str = " → ".join(intermediate) if intermediate else "Direkte"
                 
-                print(f"{route['FlyruteNr']:<8} {route['PlanlagtAvgangsTid']:<6} {selected_airport:<5} {final_destination:<5} {intermediate_str:<20} {route['Flyselskap']:<15} {route['Flytype']:<15}")
+                line = f"{route['FlyruteNr']:<8} {route['PlanlagtAvgangsTid']:<6} {selected_airport:<5} {final_destination:<5} {intermediate_str:<20}"
+                output_lines.append(line)
+        
+        # Formatering dersom ankomst
         else:
-            print(f"{'Flyrute':<8} {'Tid':<6} {'Fra':<5} {'Til':<5} {'Mellomlandinger':<20} {'Flyselskap':<15} {'Flytype':<15}")
-            print("-" * 90)
+            header = f"{'Flyrute':<8} {'Tid':<6} {'Fra':<5} {'Til':<5} {'Mellomlandinger':<20}"
+            separator = "-" * 60
+            output_lines.append(header)
+            output_lines.append(separator)
+            
             for route in routes:
                 origins = route['Opprinnelser'].split(' → ') if route['Opprinnelser'] else []
                 initial_origin = origins[0] if origins else ""
                 intermediate = origins[1:] if len(origins) > 1 else []
                 intermediate_str = " → ".join(intermediate) if intermediate else "Direkte"
                 
-                print(f"{route['FlyruteNr']:<8} {route['PlanlagtAnkomstTid']:<6} {initial_origin:<5} {selected_airport:<5} {intermediate_str:<20} {route['Flyselskap']:<15} {route['Flytype']:<15}")
+                line = f"{route['FlyruteNr']:<8} {route['PlanlagtAnkomstTid']:<6} {initial_origin:<5} {selected_airport:<5} {intermediate_str:<20}"
+                output_lines.append(line)
+        
+        output_lines.append(f"\n{len(routes)} rader returnert")
+        
+        # Print og skriv resultat til fil
+        for line in output_lines:
+            print(line)
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write("\n".join(output_lines))
+        
+        print(f"\nResultatet er også skrevet til {output_file}")
         
     except Exception as e:
-        print(f"En feil oppstod: {e}")
+        error_msg = f"En feil oppstod: {e}"
+        print(error_msg)
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write(error_msg)
     finally:
         conn.close()
 
