@@ -1,9 +1,9 @@
 import sqlite3
 import os
 
-#  SSetter opp databasen med skjema og data fra SQL-filer (overskriver eksisterende database hvis den finnes)
+#  Setter opp databasen med skjema og data fra SQL-filer (overskriver eksisterende database hvis den finnes)
 
-def setup_database(db_name="flyselskap.db"):
+def setup_database(db_name):
     
     
     if os.path.exists(db_name):
@@ -13,7 +13,7 @@ def setup_database(db_name="flyselskap.db"):
     
     try:
         
-        # Read schema SQL from files
+        # Les skjema fra fil
         with open('schema.sql', 'r', encoding='utf-8') as schema_file:
             schema_sql = schema_file.read()
         

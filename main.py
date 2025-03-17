@@ -2,103 +2,113 @@ import sqlite3
 import os
 import sys
 
-# Import functions from other modules (assuming they're in the same directory)
+# Importerer funskjoner fra andre filer
 from setup_database import setup_database
 from airport_route_finder import airport_route_finder
 from available_seats_finder import available_seats_finder
 
-def run_sql_query(db_name, query_file):
-    """Run an SQL query from a file"""
+
+# Kjører sql query, printer resultatet og skriver det til output fil
+def run_sql_query(db_name, query_file, output_file="output.txt"):
     if not os.path.exists(query_file):
-        print(f"Error: Query file {query_file} not found")
+        print(f"Error: Query-fil {query_file} eksisterer ikke")
         return
-    
-    with open(query_file, 'r', encoding='utf-8') as f:
+
+    with open(query_file, "r", encoding="utf-8") as f:
         query = f.read()
-    
+
     conn = sqlite3.connect(db_name)
+
     try:
+        # Kobler til databasen og kjører query
         cursor = conn.cursor()
         cursor.execute(query)
-        
-        # Fetch and display results
         column_names = [description[0] for description in cursor.description]
         rows = cursor.fetchall()
-        
-        # Print header
+
         header = " | ".join(column_names)
-        print("\n" + header)
-        print("-" * len(header))
-        
-        # Print rows
+        separator = "-" * len(header)
+        output_lines = ["\n" + header, separator]
+
+        # Lagrer returnert data
         for row in rows:
-            print(" | ".join(str(item) for item in row))
+            row_str = " | ".join(str(item) for item in row)
+            output_lines.append(row_str)
+        output_lines.append(f"\n{len(rows)} rader returnert")
         
-        print(f"\n{len(rows)} rows returned")
-        
+        for line in output_lines:
+            print(line)
+        with open(output_file, "w", encoding="utf-8") as outfile:
+            outfile.write("\n".join(output_lines))
+        print(f"\nResultatet er også skrevet til {output_file}")
+
     except sqlite3.Error as e:
-        print(f"Database error: {e}")
+        error_msg = f"Database error: {e}"
+        print(error_msg)
+        with open(output_file, "w", encoding="utf-8") as outfile:
+            outfile.write(error_msg)
     finally:
         conn.close()
 
+# Sjekker at databasefilen eksisterer og ikke er tom
+def check_database_ready(db_name):
+    if not os.path.exists(db_name):
+        print("Database finnes ikke. Opprett den først.")
+        return False
+    if os.path.getsize(db_name) == 0:
+        print("Databasefilen er tom. Initialiser den først.")
+        return False
+    return True
+
+
+# Hovedmeny hvor brukeren kan kjøre ulike script
 def main_menu():
-    """Display main menu and handle user choices"""
-    db_name = "flyselskap.db"
-    
+    db_name = "FlyDB.db"
+
     while True:
-        print("\n=== Flyselskap Database System ===")
+        print("\n=== FlyDB Database System ===")
         print("1. Sett opp database med skjema og data")
         print("2. Vis flyselskap, flytyper og antall fly")
         print("3. Søk etter flyruter for en flyplass")
         print("4. Finn ledige seter for en flygning")
         print("0. Avslutt programmet")
-        
+
         choice = input("\nVelg en handling (0-4): ")
-        
-        if choice == '0':
+
+        # Avslutter programmet
+        if choice == "0":
+            if os.path.exists(db_name):
+                os.remove(db_name)
+            open(db_name, 'w').close()
             print("Programmet avsluttes...")
             sys.exit(0)
-        elif choice == '1':
+
+        # Initaliserer databasen med skjema og data
+        elif choice == "1":
             setup_database(db_name)
-        elif choice == '2':
-            if not os.path.exists(db_name):
-                print("Database finnes ikke. Opprett den først.")
+
+        # Brukstilfelle 5: Finner flyselskap, flytyper og antall fly
+        elif choice == "2":
+            if not check_database_ready(db_name):
                 continue
-            
             query_file = "usecase5_query.sql"
-            # Create the query file if it doesn't exist
-            if not os.path.exists(query_file):
-                query = """
-                SELECT 
-                    fs.FlyselskapsKode AS "Flyselskap Kode",
-                    fs.Navn AS "Flyselskap Navn",
-                    f.AvType AS "Flytype",
-                    COUNT(*) AS "Antall Fly"
-                FROM 
-                    Flyselskap fs
-                JOIN 
-                    Fly f ON fs.FlyselskapsKode = f.Eier
-                GROUP BY 
-                    fs.FlyselskapsKode, fs.Navn, f.AvType
-                ORDER BY 
-                    fs.Navn, f.AvType;
-                """
-                with open(query_file, 'w', encoding='utf-8') as f:
-                    f.write(query)
+            run_sql_query(db_name, query_file, "usecase5_output.txt")
             
-            run_sql_query(db_name, query_file)
-        elif choice == '3':
-            if not os.path.exists(db_name):
-                print("Database finnes ikke. Opprett den først.")
+        # Brukstifelle 6: Finner flyruter for valgt flyplass på valgt dag
+        elif choice == "3":
+            if not check_database_ready(db_name):
                 continue
             airport_route_finder(db_name)
-        elif choice == '4':
-            if not os.path.exists(db_name):
-                print("Database finnes ikke. Opprett den først.")
+
+        # Brukstilfelle 8: Finn ledig sete for flyvning    
+        elif choice == "4":
+            if not check_database_ready(db_name):
                 continue
             available_seats_finder(db_name)
+            
         else:
             print("Ugyldig valg. Prøv igjen.")
+
 
 if __name__ == "__main__":
     main_menu()

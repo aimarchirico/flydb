@@ -1,0 +1,8 @@
+
+Flyselskapskode | Flyselskapsnavn | Flytype | Antall fly
+--------------------------------------------------------
+DY | Norwegian | Boeing 737 800 | 4
+SK | SAS | Airbus a320neo | 4
+WF | Widerøe | Dash-8 100 | 3
+
+3 rader returnert
