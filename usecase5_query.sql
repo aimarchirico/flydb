@@ -1,4 +1,5 @@
--- BRUKSTILFELLE 5
+-- BRUKSTILFELLE 5:
+
 -- Finner flyselskap (kode og navn), 
 -- hvilke flytyper selskapet har, 
 -- og antall fly selskapet har av hver flytype
