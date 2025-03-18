@@ -70,7 +70,7 @@ def main_menu():
         print("1. Sett opp database med skjema og data")
         print("2. Vis flyselskap, flytyper og antall fly")
         print("3. Søk etter flyruter for en flyplass")
-        print("4. Finn ledige seter for en flygning")
+        print("4. Finn ledige seter for en flyvning")
         print("0. Avslutt programmet")
 
         choice = input("\nVelg en handling (0-4): ")
