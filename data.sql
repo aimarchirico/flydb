@@ -1,3 +1,5 @@
+-- BRUKSTILFELLE 1:
+
 -- Vedlegg 1:
 
 -- Flyplasser
@@ -6,6 +8,8 @@ INSERT INTO Flyplass (FlyplassKode, Navn, Sted) VALUES ('BGO', 'Bergen lufthavn'
 INSERT INTO Flyplass (FlyplassKode, Navn, Sted) VALUES ('OSL', 'Oslo lufthavn', 'Gardermoen');
 INSERT INTO Flyplass (FlyplassKode, Navn, Sted) VALUES ('SVG', 'Stavanger lufthavn', 'Sola');
 INSERT INTO Flyplass (FlyplassKode, Navn, Sted) VALUES ('TRD', 'Trondheim lufthavn', 'Værnes');
+
+-- BRUKSTILFELLE 2:
 
 -- Vedlegg 2: 
 
@@ -116,6 +120,7 @@ SELECT CAST(rownum AS TEXT) || seat,
 FROM d8_rows,
      (SELECT 'A' AS seat UNION SELECT 'B' UNION SELECT 'C' UNION SELECT 'D');
 
+-- BRUKSTILFELLE 3: 
 
 -- Vedlegg 3:
 
@@ -195,7 +200,9 @@ VALUES (753, 1, 1000, 500, 1500);
 INSERT INTO SegmentIKombo (FlyruteNr, KomboNr, SekvensNr)
 VALUES (753, 1, 1);
 
--- Brukstilfelle 4: Flyvninger
+-- BRUKSTIFELLE 4:
+
+-- Flyvninger
 
 -- WF1302 (BOO-TRD) med fly av riktig type og eier
 INSERT INTO Flyvning (FlyruteNr, LøpeNr, Dato, Status, Produsent, SerieNr)
@@ -224,7 +231,9 @@ WHERE f.AvType = fr.FlysMed
 AND f.Eier = fr.FlysAv    
 LIMIT 1;
 
--- Brukstilfelle 7: Bestilling
+-- BRUKSTIFELLE 7: 
+
+-- Bestilling
 
 -- Kunde
 INSERT INTO Kunde (KundeNr, Navn, TelefonNr, Epost, Nasjonalitet)
