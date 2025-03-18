@@ -1,0 +1,8 @@
+
+=== Ankomster til Stavanger lufthavn (SVG) på Mandag ===
+
+Flyrute  Tid    Fra   Til   Mellomlandinger     
+------------------------------------------------------------
+888      12:10  TRD   SVG   BGO                 
+
+1 rader returnert
