@@ -4,8 +4,8 @@ import sys
 
 # Importerer funskjoner fra andre filer
 from setup_database import setup_database
-from airport_route_finder import airport_route_finder
-from available_seats_finder import available_seats_finder
+from usecase6_airports import airport_route_finder
+from usecase8_seats import available_seats_finder
 
 
 # Kjører sql query, printer resultatet og skriver det til output fil
