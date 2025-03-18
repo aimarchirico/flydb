@@ -4,6 +4,7 @@ from datetime import datetime
 # Finner ledige seter for en valgt flyvning for hvert segment
 def available_seats_finder(db_name):
     output_lines = []
+    output_file = "usecase8_output.txt"
     
     conn = sqlite3.connect(db_name)
     conn.row_factory = sqlite3.Row
@@ -246,15 +247,15 @@ def available_seats_finder(db_name):
             output_lines.append(summary)
             print(summary)
         
-        # Write to file after completion
-        with open("usecase8_output.txt", "w", encoding="utf-8") as f:
+        # Skriv til fil
+        with open(output_file, "w", encoding="utf-8") as f:
             f.write('\n'.join(output_lines))
-        print("\nResultatet er også skrevet til usecase8_output.txt")
+        print(f"\nResultatet er også skrevet til {output_file}")
             
     except Exception as e:
         error_msg = f"En feil oppstod: {e}"
         print(error_msg)
-        with open("usecase8_output.txt", "w", encoding="utf-8") as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             f.write(error_msg)
     finally:
         conn.close()
